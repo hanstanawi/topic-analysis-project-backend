@@ -30,16 +30,16 @@ def getArticleById():
     cur = mysql.connection.cursor()
     cur.execute('SELECT * FROM topic_analysis.articles WHERE id = %s', articleId)
     result = cur.fetchone()
-    print(result)
     return jsonify(result)
 
 # Search for correlated articles
 @app.route('/api/search', methods=['GET'])
 def searchTopics():
-    keyword = request.args.get('keyword', type=str)
+    keyword = request.args.get('keyword')
     cur = mysql.connection.cursor()
     cur.execute(
-        'SELECT * FROM topic_analysis.articles WHERE title = %s', keyword)
+        'SELECT * FROM topic_analysis.articles WHERE content LIKE %s', ("%{}%".format(
+            keyword),))
     result = cur.fetchall()
     return jsonify(result)
 
