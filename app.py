@@ -51,8 +51,27 @@ def searchTopics():
     return jsonify(result)
 
 
+doc = {
+    'query': {
+        'bool': {
+            'must': {
+                'match': {
+                    'board': 'Gossiping'
+                }
+            },
+            'must_not': {
+                'match': {
+                    'board': 'Nba'
+                }
+            }
+        }
+    }
+}
 # Elasticsearch search index
-print(es.search(index='ptt'))
-
+print(es.search(
+    index='ptt_board_test',
+    body=doc
+)
+)
 if __name__ == '__main__':
     app.run(debug=True)
