@@ -43,12 +43,17 @@ def getArticleById():
 @app.route('/api/search', methods=['GET'])
 def searchTopics():
     keyword = request.args.get('keyword')
+    print(keyword)
     cur = mysql.connection.cursor()
     cur.execute(
         'SELECT * FROM ptt_data.ptt_content WHERE content LIKE %s LIMIT 10', ("%{}%".format(
             keyword),))
     result = cur.fetchall()
     return jsonify(result)
+
+# ===============================================================================
+
+# ELASTICSEARCH PRACTICE AREA
 
 
 doc = {
@@ -68,10 +73,9 @@ doc = {
     }
 }
 # Elasticsearch search index
-print(es.search(
+es.search(
     index='ptt_board_test',
     body=doc
-)
 )
 if __name__ == '__main__':
     app.run(debug=True)
