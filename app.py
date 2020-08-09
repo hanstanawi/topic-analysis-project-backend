@@ -19,7 +19,7 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 CORS(app, support_credentials=True)
 
-# Get certain amount of latest articles
+# Get certain amount of latest articles (MySQL)
 @app.route('/api/articles', methods=['GET'])
 def getAllArticles():
     limit = request.args.get('limit', type=int)
@@ -29,9 +29,8 @@ def getAllArticles():
     result = cur.fetchall()
     return jsonify(result)
 
-# Get a single article
+# Get a single article (MySQL)
 @app.route('/api/article', methods=['GET'])
-@cross_origin()
 def getArticleById():
     articleId = request.args.get('articleId')
     cur = mysql.connection.cursor()
@@ -40,15 +39,29 @@ def getArticleById():
     result = cur.fetchone()
     return jsonify(result)
 
-# Search for correlated articles
-@app.route('/api/search', methods=['GET'])
-def searchTopics():
+# Keyword search for correlated articles (Elasticsearch)
+@app.route('/api/keyword-search', methods=['GET'])
+def keywordSearch():
     keyword = request.args.get('keyword')
     doc = {
         'query': {
             'multi_match': {
                 'query': keyword,
                 'fields': ['title', 'content']
+            }
+        }
+    }
+    result = es.search(index='ptt', body=doc)
+    return jsonify(result['hits']['hits'])
+
+# Article/long-text search for correlated articles (Elasticsearch)
+@app.route('/api/text-search', methods=['GET'])
+def textSearch():
+    text = request.args.get('text')
+    doc = {
+        'query': {
+            'match': {
+                'content': text
             }
         }
     }
