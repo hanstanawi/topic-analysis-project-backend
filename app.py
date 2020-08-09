@@ -3,7 +3,6 @@ from flask_mysqldb import MySQL
 from flask_cors import CORS, cross_origin
 from elasticsearch import Elasticsearch
 
-
 app = Flask(__name__)
 
 # Config Elasticsearch
@@ -20,15 +19,17 @@ app.config['MYSQL_CURSORCLASS'] = 'DictCursor'
 mysql = MySQL(app)
 CORS(app, support_credentials=True)
 
-# Get latest articles
+# Get certain amount of latest articles
 @app.route('/api/articles', methods=['GET'])
 def getAllArticles():
+    limit = request.args.get('limit', type=int)
     cur = mysql.connection.cursor()
-    cur.execute('SELECT * FROM ptt_data.ptt_content ORDER BY tp DESC LIMIT 5')
+    cur.execute(
+        'SELECT * FROM ptt_data.ptt_content ORDER BY tp DESC LIMIT %s', [limit])
     result = cur.fetchall()
     return jsonify(result)
 
-# Get single article
+# Get a single article
 @app.route('/api/article', methods=['GET'])
 @cross_origin()
 def getArticleById():
@@ -43,39 +44,17 @@ def getArticleById():
 @app.route('/api/search', methods=['GET'])
 def searchTopics():
     keyword = request.args.get('keyword')
-    print(keyword)
-    cur = mysql.connection.cursor()
-    cur.execute(
-        'SELECT * FROM ptt_data.ptt_content WHERE content LIKE %s LIMIT 10', ("%{}%".format(
-            keyword),))
-    result = cur.fetchall()
-    return jsonify(result)
-
-# ===============================================================================
-
-# ELASTICSEARCH PRACTICE AREA
-
-
-doc = {
-    'query': {
-        'bool': {
-            'must': {
-                'match': {
-                    'board': 'Gossiping'
-                }
-            },
-            'must_not': {
-                'match': {
-                    'board': 'Nba'
-                }
+    doc = {
+        'query': {
+            'multi_match': {
+                'query': keyword,
+                'fields': ['title', 'content']
             }
         }
     }
-}
-# Elasticsearch search index
-es.search(
-    index='ptt_board_test',
-    body=doc
-)
+    result = es.search(index='ptt', body=doc)
+    return jsonify(result['hits']['hits'])
+
+
 if __name__ == '__main__':
     app.run(debug=True)
